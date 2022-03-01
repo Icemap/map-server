@@ -12,6 +12,7 @@ func Serve() {
 
 	r.GET("/config", configHandle)
 	r.POST("/map", mapDownloadHandler)
+	r.GET("/tms", tmsHandler)
 
 	err := r.Run(fmt.Sprintf(":%d", config.ReadConfig().Service.Port))
 	if err != nil {

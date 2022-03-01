@@ -14,12 +14,18 @@ import (
 	"strings"
 )
 
-type MapDownloadRequest struct {
-	MapType     string                `form:"mapType" json:"mapType" xml:"mapType"  binding:"required"`
-	Level       int                   `form:"level" json:"level" xml:"level"  binding:"required"`
-	LeftTop     coordinate.Coordinate `form:"leftTop" json:"leftTop" xml:"leftTop"  binding:"required"`
-	RightBottom coordinate.Coordinate `form:"rightBottom" json:"rightBottom" xml:"rightBottom"  binding:"required"`
-}
+type (
+	MapDownloadRequest struct {
+		MapType     string                `form:"mapType" json:"mapType" xml:"mapType"  binding:"required"`
+		Level       int                   `form:"level" json:"level" xml:"level"  binding:"required"`
+		LeftTop     coordinate.Coordinate `form:"leftTop" json:"leftTop" xml:"leftTop"  binding:"required"`
+		RightBottom coordinate.Coordinate `form:"rightBottom" json:"rightBottom" xml:"rightBottom"  binding:"required"`
+	}
+
+	MapDownloadResponse struct {
+		Message string `form:"message" json:"message" xml:"message"`
+	}
+)
 
 var validMapTypeSet = map[string]interface{}{
 	coordinate.GoogleSatellite: nil,
@@ -56,8 +62,7 @@ func mapDownloadHandler(c *gin.Context) {
 	go tileRange.EffectAll(func(level, x, y int) {
 		// download
 		url := coordinate.WebMercatorTileToURL(req.MapType, x, y, level)
-		tilePath := strings.Join([]string{config.ReadConfig().Service.MapPath,
-			strconv.Itoa(level), strconv.Itoa(x), strconv.Itoa(y), "pic.jpg"}, string(os.PathSeparator))
+		tilePath := tilePathBuilder(x, y, level)
 
 		err = download(url, tilePath)
 		for i := 0; i < config.ReadConfig().Service.DownloadRetry; i++ {
@@ -70,6 +75,8 @@ func mapDownloadHandler(c *gin.Context) {
 
 		logger.Logger().Debugw("[download] download success", "level", level, "x", x, "y", y)
 	})
+
+	c.JSON(http.StatusOK, MapDownloadResponse{Message: "downloading..."})
 }
 
 // download file downloader
@@ -106,4 +113,9 @@ func download(url, filePath string) error {
 func fileExist(path string) bool {
 	_, err := os.Lstat(path)
 	return !os.IsNotExist(err)
+}
+
+func tilePathBuilder(x, y, z int) string {
+	return strings.Join([]string{config.ReadConfig().Service.MapPath,
+		strconv.Itoa(z), strconv.Itoa(x), strconv.Itoa(y), "pic.jpg"}, string(os.PathSeparator))
 }
