@@ -1,0 +1,11 @@
+service:
+  port: 8080
+  concurrency: 100
+  mapPath: /tmp/map-tile
+  dbPath: /tmp/map
+  downloadRetry: 3
+  
+log:
+  level: debug
+  logName: /tmp/log
+  errorName: /tmp/error
